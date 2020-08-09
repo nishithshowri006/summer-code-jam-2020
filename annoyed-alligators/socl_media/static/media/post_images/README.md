@@ -1,1 +1,1 @@
-All the images posted as Posts are saved here
+This directory stores all the posted images.
