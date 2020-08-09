@@ -1,11 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
-from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.views.generic import ListView
-from .forms import UserUpdateForm, ProfileUpdateForm, UserRegisterForm
 from socl_media.apps.feed.models import Post
+from .models import Profile
+from .forms import UserUpdateForm, ProfileUpdateForm, UserRegisterForm
 
 
 def signup(request):
@@ -13,14 +13,14 @@ def signup(request):
     This view asks new users to sign up.
     (Registers new accounts)
     """
+
     if request.user.is_authenticated:
-        return redirect('/')
+        return redirect('home')
     if request.method == 'POST':
         form = UserRegisterForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Account Created! Login to continue")
-            return redirect('/login')
+            return redirect('login')
         else:
             return render(request, 'users/signup.html', {'form': form})
     else:
@@ -30,9 +30,10 @@ def signup(request):
 
 class profile(ListView):
     """
-    The profile view allows users to view their profile and update if any
-    changes are required.
+    The profile view finds the user passed in the profile url
+    and renders their profile page.
     """
+
     model = Post
     template_name = 'users/profile.html'
     context_object_name = 'posts'
@@ -58,24 +59,25 @@ class profile(ListView):
 @login_required
 def profile_edit(request):
     """
-    The view that handles the profile/edit route and gives the current user
+    The view that handles the /profile/edit route and gives the current user
     a form to update their profile info.
     """
+
     if request.method == "POST":
         u_form = UserUpdateForm(request.POST, instance=request.user)
         p_form = ProfileUpdateForm(request.POST,
                                    request.FILES,
                                    instance=request.user.profile)
-        
+
         if u_form.is_valid() and p_form.is_valid():
-            u_form.save()
+            user = u_form.save()
             p_form.save()
             messages.success(request, "Account Information Updated!")
-            return redirect('profile', request.user.username)
+            return redirect('profile', user.username)
 
     else:
         u_form = UserUpdateForm(instance=request.user)
-        p_form = ProfileUpdateForm(instance=request.user.profile) 
+        p_form = ProfileUpdateForm(instance=request.user.profile)
 
     context = {
         'u_form': u_form,
